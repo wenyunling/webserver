@@ -3,18 +3,18 @@
     <head>
         <meta charset="UTF-8">
         <title>Sign up</title>
+        <link rel="stylesheet" href="./assets/css/styles.css">
     </head>
     <body>
-<br/>
-<br/>
-    <div align="center"><font size="5"> <strong>注册</strong></font></div>
-    <br/>
-        <div class="login">
-                <form action="3CGISQL.cgi" method="post">
-                        <div align="center"><input type="text" name="user" placeholder="用户名" required="required"></div><br/>
-                        <div align="center"><input type="password" name="password" placeholder="用户密码" required="required"></div><br/>
-                        <div align="center"><button type="submit">注册</button></div>
-                </form>
+        <div class="container">
+            <h1>注册</h1>
+            <form action="3CGISQL.cgi" method="post">
+                <input type="text" name="user" placeholder="用户名" required>
+                <br/>
+                <input type="password" name="password" placeholder="用户密码" required>
+                <br/>
+                <button type="submit">注册</button>
+            </form>
         </div>
     </body>
 </html>
