@@ -15,4 +15,5 @@ public:
     void clear();  // 清空缓冲区
     void getline();  // 从指定输入流读取数据
     void setBuf(const char* _buf);  // 设置缓冲区内容
+    void append_str(const std::string& _str) ;
 };

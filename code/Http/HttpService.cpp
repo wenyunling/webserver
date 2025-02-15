@@ -1,6 +1,17 @@
 #include "HttpService.h"
-#include <sstream>
+#include "../Server/Connection.h"
+#include <iostream>
 #include <fstream>
+#include <string>
+#include <unordered_map>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <filesystem>
+#include <sstream>
+#include <vector>
+#include <cerrno>
+#include <cerrno>
+#include <cstring>
 
 namespace fs = std::filesystem;
 
@@ -68,37 +79,64 @@ std::string getContentType(const std::string& filePath) {
     } else if (filePath.find(".mp3") != std::string::npos) {
         return "audio/mp3";
     } else {
-        return "application/octet-stream"; // Default binary type for unknown files
+        return "application/octet-stream"; 
     }
 }
 
-std::string generateHttpResponse(const HttpRequest& request, const std::string& resourcePath) {
+
+void handleClient(int sockfd,const HttpRequest& request, Connection* conn) {
+    // 路由表：请求路径 -> 资源文件路径
+    std::unordered_map<std::string, std::string> routes = {
+        {"/", "source/index.html"},
+        {"/source/video.mp4", "source/video.mp4"},
+        {"/source/picture.png", "source/picture.png"},
+        {"/favicon.ico", "source/1.ico"}
+    };
+
+    std::string requestedPath = request.path;
     std::string response;
 
-    // 默认返回 index.html 如果路径是 "/"
-    std::string filePath = resourcePath + (request.path == "/" ? "/index.html" : request.path);
+    // 处理请求路径
+    if (routes.find(requestedPath) != routes.end()) {
+        std::string filePath = routes[requestedPath]; 
+        std::string contentType = getContentType(filePath);
 
-    // 检查文件是否存在
-    if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
-        // 读取文件内容
+        // 打开文件并读取内容
         std::ifstream file(filePath, std::ios::binary);
-        std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-
-        // 生成响应头
+        if (!file.is_open()) {
+            std::cerr << "Error opening file: " << filePath << std::endl;
+            response = "HTTP/1.1 500 Internal Server Error\r\n";
+            response += "Content-Type: text/html\r\n";
+            response += "Content-Length: 21\r\n";
+            response += "\r\n";
+            response += "500 Internal Server Error";
+            send(sockfd, response.c_str(), response.size(), 0);
+        }
+    
+        // 获取文件大小
+        file.seekg(0, std::ios::end);
+        size_t fileSize = file.tellg();
+        file.seekg(0, std::ios::beg);
+    
+        // 构建响应头
         response = "HTTP/1.1 200 OK\r\n";
-        response += "Content-Type: " + getContentType(filePath) + "\r\n";
-        response += "Content-Length: " + std::to_string(content.size()) + "\r\n";
+        response += "Content-Type: " + contentType + "\r\n";
+        response += "Content-Length: " + std::to_string(fileSize) + "\r\n";
         response += "\r\n";
-        response += content;
+        send(sockfd, response.c_str(), response.size(), 0);
+        
+        conn->startSending(filePath);
+    
+        file.close();    
     } else {
-        // 文件不存在，返回 404 Not Found
+        // 资源未找到，返回 404 Not Found
         response = "HTTP/1.1 404 Not Found\r\n";
         response += "Content-Type: text/html\r\n";
         response += "Content-Length: 13\r\n";
         response += "\r\n";
         response += "404 Not Found";
+        send(sockfd, response.c_str(), response.size(), 0);
     }
-
-    return response;
+    
 }
 

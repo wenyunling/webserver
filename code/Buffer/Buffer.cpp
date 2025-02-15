@@ -11,7 +11,9 @@ void Buffer::append(const char* _str, int _size) {
         buf.append(_str, _size); 
     }
 }
-
+void Buffer::append_str(const std::string& _str) {
+    buf.append(_str);
+}
 size_t Buffer::size() const {
     return buf.size();  
 }
@@ -34,3 +36,4 @@ void Buffer::setBuf(const char* _buf) {
     buf.clear();
     buf.append(_buf, strlen(_buf));  // 确保传入字符串的长度
 }
+

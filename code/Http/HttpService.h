@@ -7,6 +7,7 @@
 
 namespace fs = std::filesystem;
 
+class Connection;
 class HttpRequest {
 public:
     std::string method;
@@ -22,5 +23,4 @@ public:
 std::vector<std::string> split(const std::string& str, char delimiter);
 HttpRequest parseHttpRequest(const std::string& requestData);
 std::string getContentType(const std::string& filePath);
-std::string generateHttpResponse(const HttpRequest& request, const std::string& resourcePath);
-
+void handleClient(int sockfd, const HttpRequest& request, Connection* conn);

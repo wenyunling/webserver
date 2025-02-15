@@ -8,7 +8,6 @@ Acceptor::Acceptor(EventLoop *_loop) : loop(_loop), sock(nullptr), acceptChannel
     sock = new Socket();
     InetAddress *addr = new InetAddress("192.168.233.143", 9001);
     sock->bind(addr);
-    // sock->setnonblocking(); acceptor使用阻塞式IO比较好
     sock->listen(); 
     acceptChannel = new Channel(loop, sock->getFd());
     std::function<void()> cb = std::bind(&Acceptor::acceptConnection, this);

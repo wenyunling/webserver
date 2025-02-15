@@ -19,6 +19,8 @@ public:
 
     void handleEvent();
     void enableRead();
+    void enableWrite();
+    void disableWrite();
 
     int getFd();
     uint32_t getEvents();
@@ -29,5 +31,7 @@ public:
 
     void setReady(uint32_t);
     void setReadCallback(std::function<void()>);
+    void setWriteCallback(std::function<void()> );
+
 };
 

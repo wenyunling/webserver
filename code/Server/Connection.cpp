@@ -7,14 +7,25 @@
 #include <unistd.h>
 #include <string.h>
 #include <iostream>
+#include <fstream>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <cerrno>
+#include <cstring>
+
 
 Connection::Connection(EventLoop *_loop, Socket *_sock) : loop(_loop), sock(_sock), channel(nullptr), readBuffer(nullptr), requestData("error"){
     channel = new Channel(loop, sock->getFd());
     channel->enableRead();
     channel->useET();
-    std::function<void()> cb = std::bind(&Connection::context, this, sock->getFd());
+    std::function<void()> cb = std::bind(&Connection::readFile, this, sock->getFd());
     channel->setReadCallback(cb);
     readBuffer = new Buffer();
+    channel->setWriteCallback([this]() {
+        if (isSending) {
+            trySendFile(); // 继续发送剩余数据
+        }
+    });
 }
 
 Connection::~Connection(){
@@ -28,7 +39,8 @@ void Connection::setDeleteConnectionCallback(std::function<void(int)> _cb){
 }
 
 
-void Connection::context(int sockfd) {
+
+void Connection::readFile(int sockfd) {
     char buf[1024];  // 这个buf大小无所谓
     while (true) {    // 由于使用非阻塞IO，读取客户端buffer，一次读取buf大小数据，直到全部读取完毕
         bzero(&buf, sizeof(buf));
@@ -41,23 +53,11 @@ void Connection::context(int sockfd) {
         } else if (bytes_read == -1 && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) {  // 非阻塞IO，这个条件表示数据全部读取完毕
             requestData = readBuffer->c_str();
             readBuffer->clear();
-            printf("message from client fd %d: %s\n", sockfd, requestData.c_str());
+            printf("message from client fd %d \n", sockfd);
 
             HttpRequest request = parseHttpRequest(requestData);
-            std::string resourcePath = "./source";
-            std::string response = generateHttpResponse(request, resourcePath);
+            handleClient(sockfd, request,this);
 
-            // 分批发送数据直到发送完毕
-            size_t total_sent = 0;
-            size_t response_len = response.length();
-            while (total_sent < response_len) {
-                ssize_t bytes_sent = send(sockfd, response.c_str() + total_sent, response_len - total_sent, 0);
-                if (bytes_sent == -1) {
-                    perror("data send error");
-                    break;
-                }
-                total_sent += bytes_sent;  
-            }
             break;
         } else if (bytes_read == 0) {  // EOF，客户端断开连接
             printf("EOF, client fd %d disconnected\n", sockfd);
@@ -71,3 +71,54 @@ void Connection::context(int sockfd) {
     }
 }
 
+
+// Connection.cpp
+void Connection::startSending(const std::string& filePath) {
+    sendFilePath = filePath;
+    sendFileOffset = 0;
+    isSending = true;
+    trySendFile(); // 首次尝试直接发送
+}
+
+void Connection::trySendFile() {
+    if (!isSending) return;
+
+    std::ifstream file(sendFilePath, std::ios::binary);
+    if (!file) {
+        deleteConnectionCallback(sock->getFd());         
+        return;
+    }
+
+    file.seekg(sendFileOffset);
+    const size_t buffer_size = 1024 * 64; // 64KB
+    char buffer[buffer_size];
+
+    while (isSending) {
+        file.read(buffer, buffer_size);
+        ssize_t bytes_read = file.gcount();
+        if (bytes_read <= 0) {
+            isSending = false; // 文件发送完成
+            channel->disableWrite(); // 取消监听写事件
+            break;
+        }
+
+        ssize_t bytes_sent = 0;
+        while (bytes_sent < bytes_read) {
+            ssize_t ret = write(sock->getFd(), buffer + bytes_sent, bytes_read - bytes_sent);
+            if (ret == -1) {
+                if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    channel->enableWrite(); // 注册 EPOLLOUT 事件
+                    sendFileOffset += bytes_sent; // 记录已发送量
+                    return;
+                } else {
+                    deleteConnectionCallback(sock->getFd());  
+                    return;
+                }
+            }
+            bytes_sent += ret;
+        }
+        sendFileOffset += bytes_sent; // 更新全局偏移量
+    }
+
+    file.close();
+}

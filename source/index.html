@@ -1,45 +1,38 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>欢迎页面</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            text-align: center;
-            padding: 50px;
-            margin: 0;
-        }
-        h1 {
-            color: #4CAF50;
-            font-size: 3em;
-        }
-        p {
-            font-size: 1.2em;
-            color: #555;
-        }
-        .button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 15px 30px;
-            font-size: 1.1em;
-            text-decoration: none;
-            border-radius: 5px;
-            margin-top: 20px;
-            display: inline-block;
-        }
-        .button:hover {
-            background-color: #45a049;
-        }
-    </style>
+    <title>Media Display Page</title>
 </head>
+
 <body>
+    <div class="container">
+        <h1>Welcome to My Media Showcase</h1>
+        <div class="media-container">
+            <!-- 图片展示 -->
+            <div class="image-section">
+                <h2>Picture</h2>
+                <img src="/source/picture.png" alt="Picture of the Day">
+                <p>Enjoy it!</p>
+            </div>
 
-    <h1>欢迎来到我的网站</h1>
-    <p>很高兴见到你！</p>
+            <!-- 视频展示 -->
+            <div class="video-section">
+                <h2>Video</h2>
+                <video controls>
+                    <source src="/source/video.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <p>Enjoy it!</p>
+            </div>
+        </div>
 
+        <div class="footer">
+            <p>&copy; 2025 My Website </p>
+        </div>
+    </div>
 </body>
+
 </html>
