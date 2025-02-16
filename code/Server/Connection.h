@@ -15,13 +15,12 @@ private:
     Buffer *readBuffer;
     Buffer *sendBuffer;
     std::string requestData;
-    std::function<void(const std::string&, Connection*)> requestHandler; // 请求处理回调
 
     std::string sendFilePath; // 待发送文件路径
     size_t sendFileOffset = 0; // 当前发送偏移量
     bool isSending = false; // 发送状态标记
 
-    void trySendFile(); // 实际发送逻辑
+    void trySendFile(); 
 public:
     Connection(EventLoop *_loop, Socket *_sock);
     ~Connection();

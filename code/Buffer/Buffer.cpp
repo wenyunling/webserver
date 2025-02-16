@@ -19,11 +19,11 @@ size_t Buffer::size() const {
 }
 
 const char* Buffer::c_str() const {
-    return buf.c_str();  // 返回底层数据的 c_str()
+    return buf.c_str(); 
 }
 
 void Buffer::clear() {
-    buf.clear();  // 清空缓冲区
+    buf.clear(); 
 }
 
 
@@ -34,6 +34,6 @@ void Buffer::getline(){
 
 void Buffer::setBuf(const char* _buf) {
     buf.clear();
-    buf.append(_buf, strlen(_buf));  // 确保传入字符串的长度
+    buf.append(_buf, strlen(_buf));  
 }
 
