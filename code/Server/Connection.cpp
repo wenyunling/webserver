@@ -41,8 +41,8 @@ void Connection::setDeleteConnectionCallback(std::function<void(int)> _cb){
 
 
 void Connection::readFile(int sockfd) {
-    char buf[1024];  // 这个buf大小无所谓
-    while (true) {    // 由于使用非阻塞IO，读取客户端buffer，一次读取buf大小数据，直到全部读取完毕
+    char buf[1024];  
+    while (true) {   
         bzero(&buf, sizeof(buf));
         ssize_t bytes_read = read(sockfd, buf, sizeof(buf));
         if (bytes_read > 0) {
@@ -50,7 +50,7 @@ void Connection::readFile(int sockfd) {
         } else if (bytes_read == -1 && errno == EINTR) {  // 客户端正常中断、继续读取
             printf("continue reading\n");
             continue;
-        } else if (bytes_read == -1 && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) {  // 非阻塞IO，这个条件表示数据全部读取完毕
+        } else if (bytes_read == -1 && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) {  //数据全部读取完毕
             requestData = readBuffer->c_str();
             readBuffer->clear();
             printf("message from client fd %d \n", sockfd);
@@ -90,15 +90,15 @@ void Connection::trySendFile() {
     }
 
     file.seekg(sendFileOffset);
-    const size_t buffer_size = 1024 * 64; // 64KB
+    const size_t buffer_size = 1024 * 64; 
     char buffer[buffer_size];
 
     while (isSending) {
         file.read(buffer, buffer_size);
         ssize_t bytes_read = file.gcount();
         if (bytes_read <= 0) {
-            isSending = false; // 文件发送完成
-            channel->disableWrite(); // 取消监听写事件
+            isSending = false; 
+            channel->disableWrite(); 
             break;
         }
 
@@ -107,7 +107,7 @@ void Connection::trySendFile() {
             ssize_t ret = write(sock->getFd(), buffer + bytes_sent, bytes_read - bytes_sent);
             if (ret == -1) {
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    channel->enableWrite(); // 注册 EPOLLOUT 事件
+                    channel->enableWrite(); 
                     sendFileOffset += bytes_sent; // 记录已发送量
                     return;
                 } else {
@@ -117,7 +117,7 @@ void Connection::trySendFile() {
             }
             bytes_sent += ret;
         }
-        sendFileOffset += bytes_sent; // 更新全局偏移量
+        sendFileOffset += bytes_sent; // 更新
     }
 
     file.close();
